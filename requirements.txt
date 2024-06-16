@@ -1,0 +1,12 @@
+Cython
+numpy<2
+typing_extensions
+nemo_toolkit[all]    
+torch
+fastapi
+nltk
+ipython
+soundfile
+pydub
+PyPDF2
+
