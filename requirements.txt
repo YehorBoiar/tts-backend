@@ -9,4 +9,8 @@ ipython
 soundfile
 pydub
 PyPDF2
-
+uvicorn
+pydantic
+passlib
+pyjwt
+python-jose
