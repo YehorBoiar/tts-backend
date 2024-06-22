@@ -5,8 +5,8 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from .crud import get_user_by_username, get_db
-from const import SECRET_KEY, ALGORITHM, CREDENTIALS_EXCEPTION
+from ..db.crud import get_user_by_username, get_db
+from .const import SECRET_KEY, ALGORITHM, CREDENTIALS_EXCEPTION
 
 class Token(BaseModel):
     access_token: str

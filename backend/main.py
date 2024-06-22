@@ -7,14 +7,14 @@ import torch
 import soundfile as sf
 from pydub import AudioSegment
 from typing import List
-from auth import authenticate_user, create_access_token, get_current_active_user, get_user_with_role, Token, User
-from const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION, USERS_DB
-from tts_utils import pdf_to_text, initialize_device, load_model, process_text_to_speech
+from .auth import authenticate_user, create_access_token, get_current_active_user, get_user_with_role, Token, User
+from .const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION, USERS_DB
+from .tts_utils import pdf_to_text, initialize_device, load_model, process_text_to_speech
 import os
 from datetime import timedelta
 from sqlalchemy.orm import Session
-from register import register_user, UserCreate
-from db.crud import get_db, get_all_users
+from .register import register_user, UserCreate
+from ..db.crud import get_db, get_all_users
 
 app = FastAPI()
 

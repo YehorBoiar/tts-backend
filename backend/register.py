@@ -2,7 +2,7 @@ from pydantic import BaseModel, EmailStr, Field, validator
 from fastapi import HTTPException, status, Depends
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-from db.crud import add_user, get_user_by_email, get_user_by_username, get_db
+from ..db.crud import add_user, get_user_by_email, get_user_by_username, get_db
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -13,7 +13,7 @@ class UserCreate(BaseModel):
     password: str = Field(..., min_length=8, max_length=255)
     username: str = Field(..., min_length=1, max_length=255)
     role: str = Field(default="user")
-    
+
     @validator('password')
     def validate_password(cls, v):
         if len(v) < 8:

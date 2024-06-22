@@ -3,13 +3,13 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine, Column, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
-from backend.const import DATABASE_URL
+from ..backend.const import USERS_DB
 
 load_dotenv()
 
 Base = declarative_base()
 
-engine = create_engine(DATABASE_URL)
+engine = create_engine(USERS_DB)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_db():
