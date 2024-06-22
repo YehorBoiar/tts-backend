@@ -12,6 +12,9 @@ from const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION, USERS_DB
 from tts_utils import pdf_to_text, initialize_device, load_model, process_text_to_speech
 import os
 from datetime import timedelta
+from sqlalchemy.orm import Session
+from register import register_user, UserCreate
+from db.crud import get_db
 
 app = FastAPI()
 
@@ -33,6 +36,11 @@ app.add_middleware(
 device = initialize_device()
 tacotron2 = load_model(nemo_tts.models.Tacotron2Model, "tts_en_tacotron2", device)
 hifigan = load_model(nemo_tts.models.HifiGanModel, "tts_en_hifigan", device)
+
+@app.post("/register", response_model=UserCreate)
+def register(user_create: UserCreate, db: Session = Depends(get_db)):
+    new_user = register_user(db, user_create)
+    return new_user
 
 @app.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
