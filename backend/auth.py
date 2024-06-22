@@ -8,17 +8,7 @@ import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from passlib.context import CryptContext
-
-# to get a string like this run:
-SECRET_KEY = os.getenv('SECRET_KEY')
-USERS_DB = os.getenv('DATABASE_URL')
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-CREDENTIALS_EXCEPTION = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+from const import SECRET_KEY, ALGORITHM, CREDENTIALS_EXCEPTION, USERS_DB
 
 class Token(BaseModel):
     access_token: str
