@@ -1,40 +1,44 @@
 import os
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy import create_engine, Column, String
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
+from backend.const import DATABASE_URL
 
 load_dotenv()
 
 Base = declarative_base()
 
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 class User(Base):
     __tablename__ = 'users'
     
-    ID = Column(Integer, primary_key=True)
     fullname = Column(String(255), nullable=False)
     email = Column(String(255), nullable=False, unique=True)
     password = Column(String(255), nullable=False)
+    username = Column(String(255), primary_key=True, index=True)
+    role = Column(String(50), nullable=False, default="user")  # Added role field
 
-DATABASE_URL = os.getenv('DATABASE_URL')
-engine = create_engine(DATABASE_URL)
-Base.metadata.create_all(engine)
+Base.metadata.create_all(bind=engine)
 
-Session = sessionmaker(bind=engine)
-session = Session()
-
-def add_user(fullname, email, password):
-    existing_user = session.query(User).filter(User.email == email).first()
-    if existing_user:
-        print(f"User with email {email} already exists.")
-        return None
-    new_user = User(fullname=fullname, email=email, password=password)
-    session.add(new_user)
-    session.commit()
+def add_user(db: Session, fullname: str, email: str, password: str, username: str, role: str = "user") -> User:
+    new_user = User(fullname=fullname, email=email, password=password, username=username, role=role)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
     return new_user
 
-def update_user(user_id, fullname=None, email=None, password=None):
-    user = session.query(User).filter(User.ID == user_id).first()
+def update_user(db: Session, username: str, fullname: str = None, email: str = None, password: str = None) -> User:
+    user = db.query(User).filter(User.username == username).first()
     if user:
         if fullname:
             user.fullname = fullname
@@ -42,25 +46,28 @@ def update_user(user_id, fullname=None, email=None, password=None):
             user.email = email
         if password:
             user.password = password
-        session.commit()
+        db.commit()
+        db.refresh(user)
         return user
     return None
 
-def get_user_by_id(user_id):
-    return session.query(User).filter(User.ID == user_id).first()
+def get_user_by_username(db: Session, username: str) -> User:
+    return db.query(User).filter(User.username == username).first()
 
-def get_all_users():
-    return session.query(User).all()
+def get_user_by_email(db: Session, email: str) -> User:
+    return db.query(User).filter(User.email == email).first()
 
-def delete_user(user_id):
-    user = session.query(User).filter(User.ID == user_id).first()
+def get_all_users(db: Session):
+    return db.query(User).all()
+
+def delete_user(db: Session, username: str) -> bool:
+    user = db.query(User).filter(User.username == username).first()
     if user:
-        session.delete(user)
-        session.commit()
+        db.delete(user)
+        db.commit()
         return True
     return False
 
-def delete_all_users():
-    session.query(User).delete()
-    session.commit()
-
+def delete_all_users(db: Session):
+    db.query(User).delete()
+    db.commit()
