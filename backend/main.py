@@ -14,7 +14,8 @@ import os
 from datetime import timedelta
 from sqlalchemy.orm import Session
 from .register import register_user, UserCreate
-from ..db.crud import get_db, get_all_users
+from ..db.crud import get_all_users
+from ..db.database import get_db
 
 app = FastAPI()
 

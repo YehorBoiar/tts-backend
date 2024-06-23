@@ -4,6 +4,7 @@ from sqlalchemy import create_engine, Column, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from ..backend.const import USERS_DB
+from .models import User
 
 load_dotenv()
 
@@ -11,22 +12,6 @@ Base = declarative_base()
 
 engine = create_engine(USERS_DB)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-class User(Base):
-    __tablename__ = 'users'
-    
-    fullname = Column(String(255), nullable=False)
-    email = Column(String(255), nullable=False, unique=True)
-    password = Column(String(255), nullable=False)
-    username = Column(String(255), primary_key=True, index=True)
-    role = Column(String(50), nullable=False, default="user")  # Added role field
 
 Base.metadata.create_all(bind=engine)
 
