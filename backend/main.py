@@ -8,7 +8,7 @@ import soundfile as sf
 from pydub import AudioSegment
 from typing import List
 from .auth import authenticate_user, create_access_token, get_current_active_user, get_user_with_role, Token, User
-from .const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION, USERS_DB
+from .const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION
 from .tts_utils import pdf_to_text, initialize_device, load_model, process_text_to_speech
 import os
 from datetime import timedelta
@@ -52,8 +52,8 @@ async def read_all_users(db: Session = Depends(get_db), current_user: User = Dep
     return users
 
 @app.post("/token", response_model=Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = authenticate_user(USERS_DB, form_data.username, form_data.password)
+async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
+    user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise CREDENTIALS_EXCEPTION
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
