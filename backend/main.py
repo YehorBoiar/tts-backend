@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from .register import register_user, UserCreate
 from ..db.crud import get_all_users
 from ..db.database import get_db
+from ..db.crud_generated_wav import add_generated_wav
 
 app = FastAPI()
 
@@ -64,18 +65,27 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.post("/synthesize")
-async def synthesize(file: UploadFile = File(...), current_user: User = Depends(get_current_active_user)):
+async def synthesize(file: UploadFile = File(...), current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     if not file:
-        return {"error": "No file part"}, 400
+        raise HTTPException(status_code=400, detail="No file part")
     if file.filename == '':
-        return {"error": "No selected file"}, 400
+        raise HTTPException(status_code=400, detail="No selected file")
 
     pdf_content = await file.read()
     text = pdf_to_text(pdf_content)
     full_audio = process_text_to_speech(tacotron2, hifigan, device, text)
+    
     output_path = "output.wav"
     full_audio.export(output_path, format="wav")
-
+    
+    add_generated_wav(
+        db=db,
+        username=current_user.username,
+        pdf_file_name=file.filename,
+        wav_file_name=os.path.basename(output_path),
+        wav_file_path=output_path
+    )
+    
     return FileResponse(output_path, media_type='audio/wav', filename=os.path.basename(output_path))
 
 if __name__ == "__main__":
