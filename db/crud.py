@@ -3,11 +3,10 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine, Column, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
-from ..backend.const import USERS_DB
+from backend.const import USERS_DB
 from .models import User
 
 load_dotenv()
-
 Base = declarative_base()
 
 engine = create_engine(USERS_DB)

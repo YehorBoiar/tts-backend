@@ -2,8 +2,8 @@ from pydantic import BaseModel, EmailStr, Field, validator
 from fastapi import HTTPException, status, Depends
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-from ..db.crud import add_user, get_user_by_email, get_user_by_username
-from ..db.database import get_db
+from db.crud import add_user, get_user_by_email, get_user_by_username
+from db.database import get_db
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

@@ -14,9 +14,9 @@ import os
 from datetime import timedelta
 from sqlalchemy.orm import Session
 from .register import register_user, UserCreate
-from ..db.crud import get_all_users
-from ..db.database import get_db
-from ..db.crud_generated_wav import add_generated_wav
+from db.crud import get_all_users
+from db.database import get_db
+from db.crud_generated_wav import add_generated_wav
 
 app = FastAPI()
 
@@ -90,4 +90,4 @@ async def synthesize(file: UploadFile = File(...), current_user: User = Depends(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host='0.0.0.0', port=8000)
+    uvicorn.run(app, host='0.0.0.0', port=80)
