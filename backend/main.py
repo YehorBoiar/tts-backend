@@ -65,7 +65,7 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.post("/synthesize")
-async def synthesize(file: UploadFile = File(...), current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+async def synthesize(file: UploadFile = File(...), db: Session = Depends(get_db)):
     if not file:
         raise HTTPException(status_code=400, detail="No file part")
     if file.filename == '':
@@ -77,14 +77,6 @@ async def synthesize(file: UploadFile = File(...), current_user: User = Depends(
     
     output_path = "output.wav"
     full_audio.export(output_path, format="wav")
-    
-    add_generated_wav(
-        db=db,
-        username=current_user.username,
-        pdf_file_name=file.filename,
-        wav_file_name=os.path.basename(output_path),
-        wav_file_path=output_path
-    )
     
     return FileResponse(output_path, media_type='audio/wav', filename=os.path.basename(output_path))
 
