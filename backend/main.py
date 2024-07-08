@@ -9,7 +9,7 @@ from pydub import AudioSegment
 from typing import List
 from .auth import authenticate_user, create_access_token, get_current_active_user, get_user_with_role, Token, User
 from .const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION
-from .tts_utils import pdf_to_text, initialize_device, load_model, process_text_to_speech
+from tts_utils.tts_utils import pdf_to_text, initialize_device, load_model, process_text_to_speech
 import os
 from datetime import timedelta
 from sqlalchemy.orm import Session
