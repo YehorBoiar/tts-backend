@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, TIMESTAMP, func
+from sqlalchemy import Column, Integer, String, ForeignKey, TIMESTAMP, Text, JSON, func, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -13,6 +13,10 @@ class User(Base):
     username = Column(String(255), primary_key=True, index=True)
     role = Column(String(50), nullable=False, default="user")
 
+    generated_wavs = relationship("GeneratedWav", order_by="GeneratedWav.wav_id", back_populates="user")
+    user_progress = relationship("UserProgress", order_by="UserProgress.book_id", back_populates="user")
+
+
 class GeneratedWav(Base):
     __tablename__ = 'generated_wavs'
     
@@ -25,4 +29,26 @@ class GeneratedWav(Base):
 
     user = relationship("User", back_populates="generated_wavs")
 
-User.generated_wavs = relationship("GeneratedWav", order_by=GeneratedWav.wav_id, back_populates="user")
+
+class Book(Base):
+    __tablename__ = 'book'
+    
+    id = Column(Integer, primary_key=True)
+    content = Column(Text, nullable=False)
+    author = Column(String(255))
+    title = Column(String(255))
+    metadata = Column(JSON)
+
+    user_progress = relationship("UserProgress", order_by="UserProgress.user_id", back_populates="book")
+
+
+class UserProgress(Base):
+    __tablename__ = 'user_progress'
+    
+    book_id = Column(Integer, ForeignKey('book.id'), primary_key=True, nullable=False)
+    user_id = Column(String(255), ForeignKey('users.username'), primary_key=True, nullable=False)
+    paragraph_idx = Column(Integer, default=0, nullable=False)
+    page_idx = Column(Integer, default=0, nullable=False)
+
+    book = relationship("Book", back_populates="user_progress")
+    user = relationship("User", back_populates="user_progress")
