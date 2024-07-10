@@ -3,30 +3,12 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from pydantic import BaseModel
+from models import TokenData, User
 from sqlalchemy.orm import Session
 from db.crud import get_user_by_username
 from db.database import get_db
 from .const import SECRET_KEY, ALGORITHM, CREDENTIALS_EXCEPTION
 
-class TextResponseModel(BaseModel):
-    text: str
-    
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-class TokenData(BaseModel):
-    username: str | None = None
-
-class User(BaseModel):
-    username: str
-    email: str | None = None
-    full_name: str | None = None
-    role: str 
-
-class UserInDB(User):
-    hashed_password: str
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

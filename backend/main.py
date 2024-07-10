@@ -3,11 +3,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 import nemo.collections.tts as nemo_tts
-import torch
-import soundfile as sf
-from pydub import AudioSegment
 from typing import List
-from .auth import authenticate_user, create_access_token, get_current_active_user, get_user_with_role, Token, User, TextResponseModel
+from .auth import authenticate_user, create_access_token, get_current_active_user, get_user_with_role
+from models import  Token, User, TextResponseModel
 from .const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION
 from tts_utils.tts_utils import initialize_device, load_model, process_text_to_speech
 from tts_utils.pdf_extraction import pdf_to_text
@@ -17,7 +15,6 @@ from sqlalchemy.orm import Session
 from .register import register_user, UserCreate
 from db.crud import get_all_users
 from db.database import get_db
-from db.crud_generated_wav import add_generated_wav
 
 app = FastAPI()
 
@@ -76,9 +73,7 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.post("/synthesize")
-async def synthesize(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    if not file:
-        raise HTTPException(status_code=400, detail="No file part")
+async def synthesize(file: UploadFile = File(...)):
     if file.filename == '':
         raise HTTPException(status_code=400, detail="No selected file")
 
