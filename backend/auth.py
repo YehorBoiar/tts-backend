@@ -3,7 +3,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from models import TokenData, User
+from .models import TokenData, User
 from sqlalchemy.orm import Session
 from db.crud import get_user_by_username
 from db.database import get_db

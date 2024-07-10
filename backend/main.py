@@ -5,16 +5,17 @@ from fastapi.responses import FileResponse
 import nemo.collections.tts as nemo_tts
 from typing import List
 from .auth import authenticate_user, create_access_token, get_current_active_user, get_user_with_role
-from models import  Token, User, TextResponseModel
+from .models import  Token, User, TextResponseModel
 from .const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION
 from tts_utils.tts_utils import initialize_device, load_model, process_text_to_speech
-from tts_utils.pdf_extraction import pdf_to_text
+from tts_utils.pdf_extraction import pdf_to_text, extract_metadata
 import os
 from datetime import timedelta
 from sqlalchemy.orm import Session
 from .register import register_user, UserCreate
 from db.crud import get_all_users
 from db.database import get_db
+from db.books import add_book
 
 app = FastAPI()
 
@@ -37,6 +38,14 @@ app.add_middleware(
 device = initialize_device()
 tacotron2 = load_model(nemo_tts.models.Tacotron2Model, "tts_en_tacotron2", device)
 hifigan = load_model(nemo_tts.models.HifiGanModel, "tts_en_hifigan", device)
+
+@app.post("/add_book", response_model=TextResponseModel)
+def add_book(db: Session = Depends(get_db), pdf_file: UploadFile = File(...)):
+    if pdf_file.filename == '':
+        raise HTTPException(status_code=400, detail="No selected file")
+    author = extract_metadata(pdf_file.file).author
+    title = extract_metadata(pdf_file.file).title
+    add_book(db, pdf_file, author, title, extract_metadata(pdf_file.file))
 
 @app.post("/text", response_model=TextResponseModel)
 def get_text(pdf_file: UploadFile = File(...)):
