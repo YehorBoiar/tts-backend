@@ -7,9 +7,10 @@ import torch
 import soundfile as sf
 from pydub import AudioSegment
 from typing import List
-from .auth import authenticate_user, create_access_token, get_current_active_user, get_user_with_role, Token, User
+from .auth import authenticate_user, create_access_token, get_current_active_user, get_user_with_role, Token, User, TextResponseModel
 from .const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION
-from tts_utils.tts_utils import pdf_to_text, initialize_device, load_model, process_text_to_speech
+from tts_utils.tts_utils import initialize_device, load_model, process_text_to_speech
+from tts_utils.pdf_extraction import pdf_to_text
 import os
 from datetime import timedelta
 from sqlalchemy.orm import Session
@@ -39,6 +40,15 @@ app.add_middleware(
 device = initialize_device()
 tacotron2 = load_model(nemo_tts.models.Tacotron2Model, "tts_en_tacotron2", device)
 hifigan = load_model(nemo_tts.models.HifiGanModel, "tts_en_hifigan", device)
+
+@app.post("/text", response_model=TextResponseModel)
+def get_text(pdf_file: UploadFile = File(...)):
+    if not pdf_file:
+        raise HTTPException(status_code=400, detail="No file part")
+    if pdf_file.filename == '':
+        raise HTTPException(status_code=400, detail="No selected file")
+    text = pdf_to_text(pdf_file.file.read())
+    return {"text": text}
 
 @app.post("/register", response_model=UserCreate)
 def register(user_create: UserCreate, db: Session = Depends(get_db)):

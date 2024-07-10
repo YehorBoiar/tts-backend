@@ -9,6 +9,9 @@ from db.crud import get_user_by_username
 from db.database import get_db
 from .const import SECRET_KEY, ALGORITHM, CREDENTIALS_EXCEPTION
 
+class TextResponseModel(BaseModel):
+    text: str
+    
 class Token(BaseModel):
     access_token: str
     token_type: str

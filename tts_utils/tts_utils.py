@@ -6,8 +6,6 @@ import soundfile as sf
 from pydub import AudioSegment
 from functools import partial
 from typing import List
-import PyPDF2
-import io
 import nltk
 
 nltk.download('punkt')
@@ -28,14 +26,7 @@ def generate_spectrogram(tacotron2, sentence: str, device: torch.device) -> torc
     with torch.no_grad():
         return tacotron2.generate_spectrogram(tokens=tokens.to(device))
 
-def pdf_to_text(file_bytes):
-    file_stream = io.BytesIO(file_bytes)
-    reader = PyPDF2.PdfReader(file_stream)
-    text = ""
-    for page_num in range(len(reader.pages)):
-        page = reader.pages[page_num]
-        text += page.extract_text() if page.extract_text() else ""
-    return text
+
 
 def convert_to_audio(hifigan, spectrogram: torch.Tensor) -> AudioSegment:
     with torch.no_grad():

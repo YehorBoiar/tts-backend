@@ -37,7 +37,7 @@ class Book(Base):
     content = Column(Text, nullable=False)
     author = Column(String(255))
     title = Column(String(255))
-    metadata = Column(JSON)
+    metadata_ = Column("metadata", JSON)
 
     user_progress = relationship("UserProgress", order_by="UserProgress.user_id", back_populates="book")
 
