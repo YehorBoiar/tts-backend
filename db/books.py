@@ -50,3 +50,9 @@ def create_book(db: Session, filename: str, username: str, author: str, title: s
     db.commit()
     db.refresh(new_book)
     return new_book
+
+def get_all_books(db: Session, username: str) -> list[Book]:
+    return db.query(Book).filter(Book.path.like(f"%{username}%")).all() 
+
+def get_book(db: Session, username: str, book_id: int) -> Book:
+    return db.query(Book).filter(Book.id == book_id, Book.path.like(f"%{username}%")).first()

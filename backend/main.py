@@ -6,7 +6,7 @@ import nemo.collections.tts as nemo_tts
 from typing import List
 from .auth import authenticate_user, create_access_token, get_current_active_user, get_user_with_role
 from .models import  Token, User, TextResponseModel
-from .const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION
+from .const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION, MEDIA_ASSETS, DOC_PATH
 from tts_utils.tts_utils import initialize_device, load_model, process_text_to_speech
 from tts_utils.pdf_extraction import pdf_to_text, extract_metadata
 import os
@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from .register import register_user, UserCreate
 from db.crud import get_all_users
 from db.database import get_db
-from db.books import create_book, save_file
+from db.books import create_book, save_file, get_all_books, get_book
 from io import BytesIO
 
 
@@ -57,6 +57,16 @@ def add_book_endpoint(db: Session = Depends(get_db), pdf_file: UploadFile = File
     book = create_book(db, pdf_file.filename, user.username, author, title, metadata)
     
     return JSONResponse(content={"message": "Book added successfully", "book_title": book.title}) 
+
+@app.get("/books", response_model=List[dict])
+def get_books(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)):
+    books = get_all_books(db, user.username)
+    return [{"title": book.title, "author": book.author, "metadata": book.metadata_} for book in books]
+
+@app.get("/get_book", response_model=TextResponseModel)
+def get_book(book_name: str, user: User = Depends(get_current_active_user)):
+    path = MEDIA_ASSETS + DOC_PATH + user.username + "_" + book_name
+    return pdf_to_text(path)
 
 @app.post("/text", response_model=TextResponseModel)
 def get_text(pdf_file: UploadFile = File(...)):
