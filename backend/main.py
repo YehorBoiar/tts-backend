@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from .register import register_user, UserCreate
 from db.crud import get_all_users
 from db.database import get_db
-from db.books import add_book
+from db.books import add_book, save_file
 
 app = FastAPI()
 
@@ -40,12 +40,13 @@ tacotron2 = load_model(nemo_tts.models.Tacotron2Model, "tts_en_tacotron2", devic
 hifigan = load_model(nemo_tts.models.HifiGanModel, "tts_en_hifigan", device)
 
 @app.post("/add_book", response_model=TextResponseModel)
-def add_book(db: Session = Depends(get_db), pdf_file: UploadFile = File(...)):
+def add_book(db: Session = Depends(get_db), pdf_file: UploadFile = File(...), user: User = Depends:(get_current_active_user)):
     if pdf_file.filename == '':
         raise HTTPException(status_code=400, detail="No selected file")
+    save_file(pdf_file, user.username, pdf_file.filename)
     author = extract_metadata(pdf_file.file).author
     title = extract_metadata(pdf_file.file).title
-    add_book(db, pdf_file, author, title, extract_metadata(pdf_file.file))
+    add_book(db, pdf_file, user.username,  author, title, extract_metadata(pdf_file.file))
 
 @app.post("/text", response_model=TextResponseModel)
 def get_text(pdf_file: UploadFile = File(...)):
