@@ -34,7 +34,7 @@ class Book(Base):
     __tablename__ = 'book'
     
     id = Column(Integer, primary_key=True)
-    content = Column(Text, nullable=False)
+    path = Column(String(512), nullable=False)
     author = Column(String(255))
     title = Column(String(255))
     metadata_ = Column("metadata", JSON)
