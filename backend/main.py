@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status, File, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 import nemo.collections.tts as nemo_tts
 from typing import List
 from .auth import authenticate_user, create_access_token, get_current_active_user, get_user_with_role
@@ -15,7 +15,9 @@ from sqlalchemy.orm import Session
 from .register import register_user, UserCreate
 from db.crud import get_all_users
 from db.database import get_db
-from db.books import add_book
+from db.books import create_book, save_file
+from io import BytesIO
+
 
 app = FastAPI()
 
@@ -40,12 +42,21 @@ tacotron2 = load_model(nemo_tts.models.Tacotron2Model, "tts_en_tacotron2", devic
 hifigan = load_model(nemo_tts.models.HifiGanModel, "tts_en_hifigan", device)
 
 @app.post("/add_book", response_model=TextResponseModel)
-def add_book(db: Session = Depends(get_db), pdf_file: UploadFile = File(...)):
+def add_book_endpoint(db: Session = Depends(get_db), pdf_file: UploadFile = File(...), user: User = Depends(get_current_active_user)):
     if pdf_file.filename == '':
         raise HTTPException(status_code=400, detail="No selected file")
-    author = extract_metadata(pdf_file.file).author
-    title = extract_metadata(pdf_file.file).title
-    add_book(db, pdf_file, author, title, extract_metadata(pdf_file.file))
+    
+    file_content = BytesIO(pdf_file.file.read())
+    if not save_file(file_content, user.username, pdf_file.filename):
+        raise HTTPException(status_code=400, detail="File already exists")
+    
+    metadata = extract_metadata(file_content)
+    author = metadata.author
+    title = metadata.title
+    
+    book = create_book(db, pdf_file.filename, user.username, author, title, metadata)
+    
+    return JSONResponse(content={"message": "Book added successfully", "book_title": book.title}) 
 
 @app.post("/text", response_model=TextResponseModel)
 def get_text(pdf_file: UploadFile = File(...)):
