@@ -66,6 +66,11 @@ def get_book(path):
     text = pdf_to_text(path)
     return TextResponseModel(text=text)
 
+@app.get("/flip", response_model=TextResponseModel)
+def flip_page(path, page_num):
+    text = pdf_to_text(path, page_num)
+    return TextResponseModel(text=text)
+
 @app.post("/text", response_model=TextResponseModel)
 def get_text(pdf_file: UploadFile = File(...)):
     if not pdf_file:

@@ -3,6 +3,10 @@ from typing import Dict, Any
 from fastapi import HTTPException
 
 def pdf_to_text(file, page_num=0):
+    try:
+        page_num = int(page_num)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid page number")
     reader = PdfReader(file)
     text = ""
     if 0 <= page_num < len(reader.pages):
