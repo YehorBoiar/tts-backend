@@ -8,7 +8,7 @@ from .auth import authenticate_user, create_access_token, get_current_active_use
 from .models import  Token, User, TextResponseModel
 from .const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION, MEDIA_ASSETS, DOC_PATH
 from tts_utils.tts_utils import initialize_device, load_model, process_text_to_speech
-from tts_utils.pdf_extraction import pdf_to_text, extract_metadata
+from tts_utils.pdf_extraction import pdf_to_text, extract_metadata, get_pages
 import os
 from datetime import timedelta
 from sqlalchemy.orm import Session
@@ -65,6 +65,11 @@ def get_books(db: Session = Depends(get_db), user: User = Depends(get_current_ac
 def get_book(path):
     text = pdf_to_text(path)
     return TextResponseModel(text=text)
+
+@app.get("/get_pages_num", response_model=TextResponseModel)
+def get_pages_num(path):
+    pages = get_pages(path)
+    return TextResponseModel(text=str(len(pages)))
 
 @app.get("/flip", response_model=TextResponseModel)
 def flip_page(path, page_num):

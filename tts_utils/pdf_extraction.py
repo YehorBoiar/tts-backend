@@ -22,3 +22,6 @@ def extract_metadata(file: str) -> Dict[str, Any]:
     metadata = reader.metadata
     metadata_dict = {key: metadata[key] for key in metadata.keys()}
     return metadata_dict
+
+def get_pages(file):
+    return PdfReader(file).pages
