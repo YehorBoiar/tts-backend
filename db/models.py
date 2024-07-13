@@ -14,7 +14,6 @@ class User(Base):
     role = Column(String(50), nullable=False, default="user")
 
     generated_wavs = relationship("GeneratedWav", order_by="GeneratedWav.wav_id", back_populates="user")
-    user_progress = relationship("UserProgress", order_by="UserProgress.book_id", back_populates="user")
 
 
 class GeneratedWav(Base):
@@ -33,22 +32,9 @@ class GeneratedWav(Base):
 class Book(Base):
     __tablename__ = 'book'
     
-    id = Column(Integer, primary_key=True)
-    path = Column(String(512), nullable=False)
-    author = Column(String(255))
-    title = Column(String(255))
+    path = Column(String(512), primary_key=True)
     metadata_ = Column("metadata", JSON)
-
-    user_progress = relationship("UserProgress", order_by="UserProgress.user_id", back_populates="book")
-
-
-class UserProgress(Base):
-    __tablename__ = 'user_progress'
-    
-    book_id = Column(Integer, ForeignKey('book.id'), primary_key=True, nullable=False)
-    user_id = Column(String(255), ForeignKey('users.username'), primary_key=True, nullable=False)
     paragraph_idx = Column(Integer, default=0, nullable=False)
     page_idx = Column(Integer, default=0, nullable=False)
+    
 
-    book = relationship("Book", back_populates="user_progress")
-    user = relationship("User", back_populates="user_progress")

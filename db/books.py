@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from backend.const import USERS_DB, MEDIA_ASSETS, DOC_PATH
@@ -43,9 +43,9 @@ def save_file(file_obj: BytesIO, username: str, filename: str) -> bool:
         return False
     
 
-def create_book(db: Session, filename: str, username: str, author: str, title: str, metadata: dict) -> Book:
+def create_book(db: Session, filename: str, username: str, metadata: dict) -> Book:
     destination = MEDIA_ASSETS + DOC_PATH + username + "_" + filename
-    new_book = Book(path=destination, author=author, title=title, metadata=metadata)
+    new_book = Book(path=destination, metadata_=metadata, paragraph_idx=0, page_idx=0)
     db.add(new_book)
     db.commit()
     db.refresh(new_book)
@@ -56,3 +56,5 @@ def get_all_books(db: Session, username: str) -> list[Book]:
 
 def get_book(db: Session, username: str, book_id: int) -> Book:
     return db.query(Book).filter(Book.id == book_id, Book.path.like(f"%{username}%")).first()
+
+

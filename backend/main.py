@@ -51,22 +51,20 @@ def add_book_endpoint(db: Session = Depends(get_db), pdf_file: UploadFile = File
         raise HTTPException(status_code=400, detail="File already exists")
     
     metadata = extract_metadata(file_content)
-    author = metadata.author
-    title = metadata.title
     
-    book = create_book(db, pdf_file.filename, user.username, author, title, metadata)
+    create_book(db, pdf_file.filename, user.username, metadata)
     
-    return JSONResponse(content={"message": "Book added successfully", "book_title": book.title}) 
+    return JSONResponse(content={"message": "Book added successfully"}) 
 
 @app.get("/books", response_model=List[dict])
 def get_books(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)):
     books = get_all_books(db, user.username)
-    return [{"title": book.title, "author": book.author, "metadata": book.metadata_} for book in books]
+    return [{"metadata": book.metadata_, "path": book.path, "paragraph": book.paragraph_idx, "page": book.page_idx} for book in books]
 
 @app.get("/get_book", response_model=TextResponseModel)
-def get_book(book_name: str, user: User = Depends(get_current_active_user)):
-    path = MEDIA_ASSETS + DOC_PATH + user.username + "_" + book_name
-    return pdf_to_text(path)
+def get_book(path):
+    text = pdf_to_text(path)
+    return TextResponseModel(text=text)
 
 @app.post("/text", response_model=TextResponseModel)
 def get_text(pdf_file: UploadFile = File(...)):

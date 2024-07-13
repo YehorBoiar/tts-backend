@@ -1,5 +1,5 @@
 from PyPDF2 import PdfReader
-import io
+from typing import Dict, Any
 from fastapi import HTTPException
 
 def pdf_to_text(file, page_num=0):
@@ -12,7 +12,9 @@ def pdf_to_text(file, page_num=0):
         raise HTTPException(status_code=400, detail="Invalid page number")
     return text
 
-def extract_metadata(file):
+
+def extract_metadata(file: str) -> Dict[str, Any]:
     reader = PdfReader(file)
     metadata = reader.metadata
-    return metadata
+    metadata_dict = {key: metadata[key] for key in metadata.keys()}
+    return metadata_dict
