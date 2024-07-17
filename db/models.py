@@ -34,7 +34,7 @@ class Book(Base):
     
     path = Column(String(512), primary_key=True)
     metadata_ = Column("metadata", JSON)
-    paragraph_idx = Column(Integer, default=0, nullable=False)
-    page_idx = Column(Integer, default=0, nullable=False)
+    paragraph_idx = Column(Integer, default=0)
+    page_idx = Column(Integer, default=0)
     
 

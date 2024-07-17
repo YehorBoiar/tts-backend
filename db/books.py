@@ -52,7 +52,9 @@ def create_book(db: Session, filename: str, username: str, metadata: dict) -> Bo
     return new_book
 
 def get_all_books(db: Session, username: str) -> list[Book]:
-    return db.query(Book).filter(Book.path.like(f"%{username}%")).all() 
+    books = db.query(Book).filter(Book.path.like(f"%{username}%")).all()
+    return books if books else []
+
 
 def get_book(db: Session, username: str, book_id: int) -> Book:
     return db.query(Book).filter(Book.id == book_id, Book.path.like(f"%{username}%")).first()
