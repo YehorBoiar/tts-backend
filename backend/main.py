@@ -6,18 +6,18 @@ import nemo.collections.tts as nemo_tts
 from typing import List
 from .auth import authenticate_user, create_access_token, get_current_active_user, get_user_with_role
 from .models import  Token, User, TextResponseModel
-from .const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION, MEDIA_ASSETS, DOC_PATH
+from .const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION, MEDIA_ASSETS, DOC_PATH, IMG_PATH
 from tts_utils.tts_utils import initialize_device, load_model, process_text_to_speech
-from tts_utils.pdf_extraction import pdf_to_text, extract_metadata, get_pages
+from tts_utils.pdf_extraction import pdf_to_text, extract_metadata, get_pages, first_page_jpeg, make_path
 import os
 from datetime import timedelta
 from sqlalchemy.orm import Session
 from .register import register_user, UserCreate
 from db.crud import get_all_users
 from db.database import get_db
-from db.books import create_book, save_file, get_all_books, get_book
+from db.books import create_book, save_file, get_all_books, get_book, update_book_img_path
 from io import BytesIO
-
+import logging
 
 app = FastAPI()
 
@@ -40,21 +40,45 @@ app.add_middleware(
 device = initialize_device()
 tacotron2 = load_model(nemo_tts.models.Tacotron2Model, "tts_en_tacotron2", device)
 hifigan = load_model(nemo_tts.models.HifiGanModel, "tts_en_hifigan", device)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 @app.post("/add_book", response_model=TextResponseModel)
-def add_book_endpoint(db: Session = Depends(get_db), pdf_file: UploadFile = File(...), user: User = Depends(get_current_active_user)):
-    if pdf_file.filename == '':
-        raise HTTPException(status_code=400, detail="No selected file")
+
+@app.post("/add_book", response_model=TextResponseModel)
+def add_book_endpoint(
+    db: Session = Depends(get_db), 
+    pdf_file: UploadFile = File(...), 
+    user: User = Depends(get_current_active_user)
+):
+    try:
+        doc_path = make_path(MEDIA_ASSETS + DOC_PATH, user.username, pdf_file.filename)
+        img_path = make_path(MEDIA_ASSETS + IMG_PATH, user.username, pdf_file.filename.replace('.pdf', '.jpeg'))
+
+        if pdf_file.filename == '':
+            raise HTTPException(status_code=400, detail="No selected file")
+
+        file_content = BytesIO(pdf_file.file.read())
+
+        if not save_file(file_content, doc_path):
+            raise HTTPException(status_code=400, detail="File already exists")
+
+        metadata = extract_metadata(file_content)
+        
+        create_book(db, doc_path, metadata)
+        
+        image = first_page_jpeg(doc_path)
+        
+        if not save_file(image, img_path):
+            raise HTTPException(status_code=500, detail="Failed to save image file")
+
+        update_book_img_path(db, doc_path, img_path)
+        
+        return {"text": "Book added successfully"}
     
-    file_content = BytesIO(pdf_file.file.read())
-    if not save_file(file_content, user.username, pdf_file.filename):
-        raise HTTPException(status_code=400, detail="File already exists")
-    
-    metadata = extract_metadata(file_content)
-    
-    create_book(db, pdf_file.filename, user.username, metadata)
-    
-    return JSONResponse(content={"message": "Book added successfully"}) 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {e}")
+
 
 @app.get("/books", response_model=List[dict])
 def get_books(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)):
