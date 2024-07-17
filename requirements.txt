@@ -16,3 +16,4 @@ pyjwt
 python-jose
 uvicorn[standard]
 sqlalchemy
+pdf2image
