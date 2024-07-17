@@ -4,6 +4,9 @@ from fastapi import HTTPException
 from pdf2image import convert_from_path
 from PIL import Image
 import io
+import os
+from io import BytesIO
+from backend.const import MEDIA_ASSETS, IMG_PATH
 
 def pdf_to_text(file, page_num=0):
     try:
@@ -28,11 +31,11 @@ def extract_metadata(file: str) -> Dict[str, Any]:
 def get_pages(file):
     return PdfReader(file).pages
 
-def pdf_first_page_to_jpeg(file, dpi=300):
-    images = convert_from_path(file, first_page=1, last_page=1, dpi=dpi)
+def pdf_first_page_to_jpeg(file, dpi=300) -> BytesIO:
+    images = convert_from_path(file, first_page=0, last_page=0, dpi=dpi)
     if images:
         img = images[0]
-        img_byte_arr = io.BytesIO()
+        img_byte_arr = BytesIO()
         img.save(img_byte_arr, format='JPEG')
         img_byte_arr.seek(0)
         return img_byte_arr
