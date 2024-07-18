@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status, File, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, StreamingResponse
 import nemo.collections.tts as nemo_tts
 from typing import List
 from .auth import authenticate_user, create_access_token, get_current_active_user, get_user_with_role
@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from .register import register_user, UserCreate
 from db.crud import get_all_users
 from db.database import get_db
-from db.books import create_book, save_file, get_all_books, get_book, update_book_img_path
+from db.books import create_book, save_file, get_all_books,  update_book_img_path, get_book_image_path
 from io import BytesIO
 import logging
 
@@ -43,7 +43,6 @@ hifigan = load_model(nemo_tts.models.HifiGanModel, "tts_en_hifigan", device)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-@app.post("/add_book", response_model=TextResponseModel)
 
 @app.post("/add_book", response_model=TextResponseModel)
 def add_book_endpoint(
@@ -64,15 +63,13 @@ def add_book_endpoint(
             raise HTTPException(status_code=400, detail="File already exists")
 
         metadata = extract_metadata(file_content)
-        
+        metadata['img_path'] = img_path
         create_book(db, doc_path, metadata)
         
         image = first_page_jpeg(doc_path)
         
         if not save_file(image, img_path):
             raise HTTPException(status_code=500, detail="Failed to save image file")
-
-        update_book_img_path(db, doc_path, img_path)
         
         return {"text": "Book added successfully"}
     
@@ -89,6 +86,12 @@ def get_books(db: Session = Depends(get_db), user: User = Depends(get_current_ac
 def get_book(path):
     text = pdf_to_text(path)
     return TextResponseModel(text=text)
+
+@app.get("/get_image", response_class=FileResponse)
+def get_image(db: Session = Depends(get_db), book_path: str = None):   
+    image_path = get_book_image_path(db, book_path)
+    return FileResponse(image_path, media_type='image/jpeg')
+    
 
 @app.get("/get_pages_num", response_model=TextResponseModel)
 def get_pages_num(path):

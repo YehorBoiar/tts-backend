@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from fastapi import HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from backend.const import USERS_DB, MEDIA_ASSETS, DOC_PATH
@@ -54,10 +55,23 @@ def get_all_books(db: Session, username: str) -> list[Book]:
 def get_book(db: Session, username: str, book_id: int) -> Book:
     return db.query(Book).filter(Book.id == book_id, Book.path.like(f"%{username}%")).first()
 
+def get_book_image_path(db: Session, book_path: str) -> str:
+    book = db.query(Book).filter(Book.path == book_path).first()
+    if book:
+        return book.metadata_['img_path']
+    else:
+        raise HTTPException(status_code=404, detail="Book not found")
+
 
 def update_book_img_path(db: Session, book_path: str, img_path: str) -> None:
     book = db.query(Book).filter(Book.path == book_path).first()
     if book:
+        # Initialize metadata if it doesn't exist
+        if not book.metadata_:
+            book.metadata_ = {}
+        if 'img_path' not in book.metadata_:
+            book.metadata_['img_path'] = ''
+        
         book.metadata_['img_path'] = img_path
         db.commit()
     else:
