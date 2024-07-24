@@ -3,10 +3,23 @@ from typing import Dict, Any
 from fastapi import HTTPException
 from pdf2image import convert_from_path
 from PIL import Image
-import io
+from typing import List
 import os
 from io import BytesIO
 
+
+def chunk_text(text: str, chunk_size: int = 3000) -> List[str]:
+    chunks = []
+    while len(text) > chunk_size:
+        # Find the last space within the chunk size
+        chunk = text[:chunk_size]
+        last_space = chunk.rfind(' ')
+        if last_space == -1:
+            last_space = chunk_size
+        chunks.append(text[:last_space])
+        text = text[last_space:]
+    chunks.append(text)
+    return chunks
 
 def make_path(media_path, username, filename):
     file_name = f"{username}_{filename}"

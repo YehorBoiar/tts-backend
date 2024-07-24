@@ -5,10 +5,10 @@ from fastapi.responses import FileResponse, StreamingResponse
 import nemo.collections.tts as nemo_tts
 from typing import List
 from .auth import authenticate_user, create_access_token, get_current_active_user, get_user_with_role
-from .models import  Token, User, TextResponseModel
-from .const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION, MEDIA_ASSETS, DOC_PATH, IMG_PATH
+from .models import  Token, User, TextResponseModel, TextToSpeechRequest, ChunkTextResponse, ChunkTextRequest
+from .const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION, MEDIA_ASSETS, DOC_PATH, IMG_PATH, AWS_SECRET_ACCESS_KEY, AWS_ACCESS_KEY_ID, AWS_REGION
 from tts_utils.tts_utils import initialize_device, load_model, process_text_to_speech
-from tts_utils.pdf_extraction import pdf_to_text, extract_metadata, get_pages, first_page_jpeg, make_path
+from tts_utils.pdf_extraction import pdf_to_text, extract_metadata, get_pages, first_page_jpeg, make_path, chunk_text
 import os
 from datetime import timedelta
 from sqlalchemy.orm import Session
@@ -18,9 +18,10 @@ from db.database import get_db
 from db.books import create_book, save_file, get_all_books,  update_book_img_path, get_book_image_path
 from io import BytesIO
 import logging
+from botocore.exceptions import BotoCoreError, ClientError
+import boto3
 
 app = FastAPI()
-
 # Update the origins list to include your Angular application's origin
 origins = [
     "http://localhost",
@@ -37,9 +38,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-device = initialize_device()
-tacotron2 = load_model(nemo_tts.models.Tacotron2Model, "tts_en_tacotron2", device)
-hifigan = load_model(nemo_tts.models.HifiGanModel, "tts_en_hifigan", device)
+polly_client = boto3.client(
+    'polly',
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    region_name=AWS_REGION
+)
+
+# device = initialize_device()
+# tacotron2 = load_model(nemo_tts.models.Tacotron2Model, "tts_en_tacotron2", device)
+# hifigan = load_model(nemo_tts.models.HifiGanModel, "tts_en_hifigan", device)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -137,20 +145,43 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+# @app.post("/synthesize")
+# async def synthesize(file: UploadFile = File(...)):
+#     if file.filename == '':
+#         raise HTTPException(status_code=400, detail="No selected file")
+
+#     pdf_content = await file.read()
+#     text = pdf_to_text(pdf_content)
+#     full_audio = process_text_to_speech(tacotron2, hifigan, device, text)
+    
+#     output_path = "output.wav"
+#     full_audio.export(output_path, format="wav")
+    
+#     return FileResponse(output_path, media_type='audio/wav', filename=os.path.basename(output_path))
+
+@app.post("/chunk_text", response_model=ChunkTextResponse)
+def chunk_text_endpoint(request: ChunkTextRequest):
+    chunks = chunk_text(request.text, request.chunk_size)
+    return ChunkTextResponse(chunks=chunks)
+
 @app.post("/synthesize")
-async def synthesize(file: UploadFile = File(...)):
-    if file.filename == '':
-        raise HTTPException(status_code=400, detail="No selected file")
+def synthesize_speech(request: TextToSpeechRequest):
+    try:
+        response = polly_client.synthesize_speech(
+            Text=request.text,
+            OutputFormat='mp3',
+            VoiceId=request.voice_id
+        )
 
-    pdf_content = await file.read()
-    text = pdf_to_text(pdf_content)
-    full_audio = process_text_to_speech(tacotron2, hifigan, device, text)
-    
-    output_path = "output.wav"
-    full_audio.export(output_path, format="wav")
-    
-    return FileResponse(output_path, media_type='audio/wav', filename=os.path.basename(output_path))
+        if "AudioStream" in response:
+            audio_stream = response["AudioStream"].read()
+            return {"audio": audio_stream.hex()}
+        else:
+            raise HTTPException(status_code=500, detail="Error in synthesizing speech")
 
+    except (BotoCoreError, ClientError) as error:
+        raise HTTPException(status_code=500, detail=str(error))
+    
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host='0.0.0.0', port=80)
