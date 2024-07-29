@@ -2,23 +2,31 @@ from PyPDF2 import PdfReader
 from typing import Dict, Any
 from fastapi import HTTPException
 from pdf2image import convert_from_path
-from PIL import Image
+import regex as re
 from typing import List
 import os
 from io import BytesIO
 
 
-def chunk_text(text: str, chunk_size: int = 3000) -> List[str]:
+def chunk_text(text: str, chunk_size: int = 300) -> List[str]:
+    sentences = re.split(r'(?<=[.!?]) +', text)
     chunks = []
-    while len(text) > chunk_size:
-        # Find the last space within the chunk size
-        chunk = text[:chunk_size]
-        last_space = chunk.rfind(' ')
-        if last_space == -1:
-            last_space = chunk_size
-        chunks.append(text[:last_space])
-        text = text[last_space:]
-    chunks.append(text)
+    current_chunk = ""
+
+    for sentence in sentences:
+        if len(current_chunk) + len(sentence) + 1 <= chunk_size:
+            if current_chunk:
+                current_chunk += " " + sentence
+            else:
+                current_chunk = sentence
+        else:
+            if current_chunk:
+                chunks.append(current_chunk)
+            current_chunk = sentence
+
+    if current_chunk:
+        chunks.append(current_chunk)
+
     return chunks
 
 def make_path(media_path, username, filename):
@@ -62,3 +70,4 @@ def first_page_jpeg(file_path: str, dpi=300) -> BytesIO:
             raise HTTPException(status_code=500, detail="Failed to convert PDF to image")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred during PDF conversion: {e}")
+
