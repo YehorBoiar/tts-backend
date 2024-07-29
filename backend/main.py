@@ -1,15 +1,12 @@
-from fastapi import FastAPI, Depends, HTTPException, status, File, UploadFile
+from fastapi import FastAPI, Depends, HTTPException, File, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
-import nemo.collections.tts as nemo_tts
+from fastapi.responses import FileResponse
 from typing import List
 from .auth import authenticate_user, create_access_token, get_current_active_user, get_user_with_role
 from .models import  Token, User, TextResponseModel, TextToSpeechRequest, ChunkTextResponse, ChunkTextRequest
 from .const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION, MEDIA_ASSETS, DOC_PATH, IMG_PATH, AWS_SECRET_ACCESS_KEY, AWS_ACCESS_KEY_ID, AWS_REGION
-from tts_utils.tts_utils import initialize_device, load_model, process_text_to_speech
 from tts_utils.pdf_extraction import pdf_to_text, extract_metadata, get_pages, first_page_jpeg, make_path, chunk_text
-import os
 from datetime import timedelta
 from sqlalchemy.orm import Session
 from .register import register_user, UserCreate
