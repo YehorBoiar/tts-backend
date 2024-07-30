@@ -29,7 +29,7 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -42,9 +42,6 @@ polly_client = boto3.client(
     region_name=AWS_REGION
 )
 
-# device = initialize_device()
-# tacotron2 = load_model(nemo_tts.models.Tacotron2Model, "tts_en_tacotron2", device)
-# hifigan = load_model(nemo_tts.models.HifiGanModel, "tts_en_hifigan", device)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
