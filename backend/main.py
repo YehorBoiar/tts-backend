@@ -139,20 +139,6 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-# @app.post("/synthesize")
-# async def synthesize(file: UploadFile = File(...)):
-#     if file.filename == '':
-#         raise HTTPException(status_code=400, detail="No selected file")
-
-#     pdf_content = await file.read()
-#     text = pdf_to_text(pdf_content)
-#     full_audio = process_text_to_speech(tacotron2, hifigan, device, text)
-    
-#     output_path = "output.wav"
-#     full_audio.export(output_path, format="wav")
-    
-#     return FileResponse(output_path, media_type='audio/wav', filename=os.path.basename(output_path))
-
 @app.post("/chunk_text", response_model=ChunkTextResponse)
 def chunk_text_endpoint(request: ChunkTextRequest):
     chunks = chunk_text(request.text, request.chunk_size)
