@@ -6,13 +6,13 @@ from typing import List
 from .auth import authenticate_user, create_access_token, get_current_active_user, get_user_with_role
 from .models import  Token, User, TextResponseModel, TextToSpeechRequest, ChunkTextResponse, ChunkTextRequest
 from .const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION, MEDIA_ASSETS, DOC_PATH, IMG_PATH, AWS_SECRET_ACCESS_KEY, AWS_ACCESS_KEY_ID, AWS_REGION
-from tts_utils.pdf_extraction import pdf_to_text, extract_metadata, get_pages, first_page_jpeg, make_path, chunk_text
+from tts_utils.pdf_extraction import pdf_to_text, extract_metadata, get_pages, first_page_jpeg, make_path, chunk_text, delete_file
 from datetime import timedelta
 from sqlalchemy.orm import Session
 from .register import register_user, UserCreate
 from db.crud import get_all_users
 from db.database import get_db
-from db.books import create_book, save_file, get_all_books,  update_book_img_path, get_book_image_path
+from db.books import create_book, save_file, get_all_books, get_book_image_path, delete_book
 from io import BytesIO
 import logging
 from botocore.exceptions import BotoCoreError, ClientError
@@ -88,6 +88,40 @@ def get_books(db: Session = Depends(get_db), user: User = Depends(get_current_ac
 def get_book(path):
     text = pdf_to_text(path)
     return TextResponseModel(text=text)
+
+@app.delete("/delete_book", response_model=TextResponseModel)
+def delete(db: Session = Depends(get_db), path: str = None):
+    logger.info(f"Received request to delete book with path: {path}")
+
+    try:
+        img_path = get_book_image_path(db, path)
+        logger.info(f"Image path for book: {img_path}")
+
+        if not delete_file(img_path):
+            logger.error(f"Failed to delete image file: {img_path}")
+            raise HTTPException(status_code=500, detail="Failed to delete image file")
+        
+        logger.info(f"Successfully deleted image file: {img_path}")
+
+        if not delete_book(db, path):
+            logger.error(f"Book not found in database: {path}")
+            raise HTTPException(status_code=404, detail="Book not found")
+        
+        logger.info(f"Successfully deleted book record from database: {path}")
+
+        if not delete_file(path):
+            logger.error(f"Failed to delete book file: {path}")
+            raise HTTPException(status_code=500, detail="Failed to delete file")
+        
+        logger.info(f"Successfully deleted book file: {path}")
+
+        return TextResponseModel(text="Book deleted successfully")
+    except HTTPException as e:
+        logger.error(f"HTTP Exception: {e.detail}")
+        raise e
+    except Exception as e:
+        logger.error(f"An unexpected error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred")
 
 @app.get("/get_image", response_class=FileResponse)
 def get_image(db: Session = Depends(get_db), book_path: str = None):   

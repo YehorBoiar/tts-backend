@@ -6,8 +6,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from backend.const import USERS_DB, MEDIA_ASSETS, DOC_PATH
 from .models import Book
-from io import BytesIO
-from tts_utils.pdf_extraction import pdf_to_text  
+from io import BytesIO  
 import os
 
 load_dotenv()
@@ -52,8 +51,17 @@ def get_all_books(db: Session, username: str) -> list[Book]:
     return books if books else []
 
 
-def get_book(db: Session, username: str, book_id: int) -> Book:
-    return db.query(Book).filter(Book.id == book_id, Book.path.like(f"%{username}%")).first()
+def get_book(db: Session, username: str) -> Book:
+    return db.query(Book).filter(Book.path.like(f"%{username}%")).first()
+
+def delete_book(db: Session, path: str) -> bool:
+    book = db.query(Book).filter(Book.path == path).first()
+    if book:
+        db.delete(book)
+        db.commit()
+        return True
+    else:
+        return False
 
 def get_book_image_path(db: Session, book_path: str) -> str:
     book = db.query(Book).filter(Book.path == book_path).first()

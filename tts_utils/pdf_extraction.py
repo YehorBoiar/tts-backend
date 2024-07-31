@@ -8,6 +8,13 @@ import os
 from io import BytesIO
 
 
+def delete_file(file_path: str) -> bool:
+    try:
+        os.remove(file_path)
+        return True
+    except OSError as e:
+        return False
+    
 def chunk_text(text: str, chunk_size: int = 300) -> List[str]:
     sentences = re.split(r'(?<=[.!?]) +', text)
     chunks = []
