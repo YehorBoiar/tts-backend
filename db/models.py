@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, TIMESTAMP, Text, JSON, func, create_engine
+from sqlalchemy import Column, Integer, String, ForeignKey, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -13,14 +13,21 @@ class User(Base):
     username = Column(String(255), primary_key=True, index=True)
     role = Column(String(50), nullable=False, default="user")
 
-    generated_wavs = relationship("GeneratedWav", order_by="GeneratedWav.wav_id", back_populates="user")
+class TtsModel(Base):
+    __tablename__ = 'tts_model'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    model_name = Column(String(255), nullable=False, unique=True)
+    model_keys = Column(JSON)
+    
+    books = relationship("Book", back_populates="tts_model")
 
 class Book(Base):
     __tablename__ = 'book'
-    
+
     path = Column(String(512), primary_key=True)
     metadata_ = Column("metadata", JSON)
-    paragraph_idx = Column(Integer, default=0)
     page_idx = Column(Integer, default=0)
-    
+    tts_model_id = Column(Integer, ForeignKey('tts_model.id'))
 
+    tts_model = relationship("TtsModel", back_populates="books")
