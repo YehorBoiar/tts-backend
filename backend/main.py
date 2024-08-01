@@ -8,11 +8,13 @@ from .models import  Token, User, TextResponseModel, TextToSpeechRequest, ChunkT
 from .const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION, MEDIA_ASSETS, DOC_PATH, IMG_PATH, AWS_SECRET_ACCESS_KEY, AWS_ACCESS_KEY_ID, AWS_REGION
 from tts_utils.pdf_extraction import pdf_to_text, extract_metadata, get_pages, first_page_jpeg, make_path, chunk_text, delete_file
 from datetime import timedelta
+from sqlalchemy import JSON
 from sqlalchemy.orm import Session
 from .register import register_user, UserCreate
 from db.crud import get_all_users
 from db.database import get_db
 from db.books import create_book, save_file, get_all_books, get_book_image_path, delete_book
+from db.tts_model import create_tts_model
 from io import BytesIO
 import logging
 from botocore.exceptions import BotoCoreError, ClientError
@@ -82,7 +84,7 @@ def add_book_endpoint(
 @app.get("/books", response_model=List[dict])
 def get_books(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)):
     books = get_all_books(db, user.username)
-    return [{"metadata": book.metadata_, "path": book.path, "paragraph": book.paragraph_idx, "page": book.page_idx} for book in books]
+    return [{"metadata": book.metadata_, "path": book.path, "page": book.page_idx} for book in books]
 
 @app.get("/get_book", response_model=TextResponseModel)
 def get_book(path):
@@ -178,9 +180,15 @@ def chunk_text_endpoint(request: ChunkTextRequest):
     chunks = chunk_text(request.text, request.chunk_size)
     return ChunkTextResponse(chunks=chunks)
 
-@app.post("/synthesize")
-def synthesize_speech(request: TextToSpeechRequest):
+@app.post("/synthesize_api")
+def synthesize_speech(aws_access_key_id: str, aws_secret_access_key: str, region_name: str, request: TextToSpeechRequest):
     try:
+        polly_client = boto3.client(
+            'polly',
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            region_name=region_name
+        )
         response = polly_client.synthesize_speech(
             Text=request.text,
             OutputFormat='mp3',
@@ -195,7 +203,20 @@ def synthesize_speech(request: TextToSpeechRequest):
 
     except (BotoCoreError, ClientError) as error:
         raise HTTPException(status_code=500, detail=str(error))
-    
+
+@app.post("/add_tts_model", response_model=TextResponseModel)
+def add_tts_model(db: Session = Depends(get_db), model_name: str="standard", model_keys: dict={}):
+    try:
+        create_tts_model(db, model_name, model_keys)
+        return {"text": "TTS model added successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {e}")
+
+# @app.get("/tts_model", response_model=TextResponseModel)
+# def get_tts_model(db: Session = Depends(get_db)):
+#     tts_models = get_all_tts_models(db)
+#     return TextResponseModel(text=tts_models)
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host='0.0.0.0', port=80)
+    uvicorn.run(app, host='0.0.0.0', port=8000)

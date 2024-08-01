@@ -4,10 +4,12 @@ from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
-from backend.const import USERS_DB, MEDIA_ASSETS, DOC_PATH
+from backend.const import USERS_DB
 from .models import Book
 from io import BytesIO  
 import os
+import logging
+
 
 load_dotenv()
 Base = declarative_base()
@@ -16,6 +18,9 @@ engine = create_engine(USERS_DB)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base.metadata.create_all(bind=engine)
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def save_file(file_obj: BytesIO, file_path: str) -> bool:
     """
@@ -40,11 +45,18 @@ def save_file(file_obj: BytesIO, file_path: str) -> bool:
     
 
 def create_book(db: Session, path: str, metadata: dict) -> Book:
-    new_book = Book(path=path, metadata_=metadata, paragraph_idx=0, page_idx=0)
-    db.add(new_book)
-    db.commit()
-    db.refresh(new_book)
-    return new_book
+    logger.info(f'Creating a new book with path: {path} and metadata: {metadata}')
+    new_book = Book(path=path, metadata_=metadata, page_idx=0)
+    try:
+        db.add(new_book)
+        db.commit()
+        db.refresh(new_book)
+        logger.info(f'Book created with path: {new_book.path}')
+        return new_book
+    except Exception as e:
+        db.rollback()
+        logger.error(f'Failed to create book with path: {path}. Error: {e}')
+        return None
 
 def get_all_books(db: Session, username: str) -> list[Book]:
     books = db.query(Book).filter(Book.path.like(f"%{username}%")).all()

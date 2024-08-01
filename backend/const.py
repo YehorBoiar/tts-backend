@@ -1,5 +1,7 @@
 import os
 from fastapi import HTTPException, status
+
+
 SECRET_KEY = os.getenv('SECRET_KEY')
 USERS_DB = os.getenv('DATABASE_URL')
 MEDIA_ASSETS = os.getenv('MEDIA_ASSETS')
