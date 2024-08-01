@@ -1,11 +1,11 @@
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
+from sqlalchemy.exc import SQLAlchemyError
 from fastapi import HTTPException
-from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from backend.const import USERS_DB
-from .models import Book
+from .models import Book, TtsModel
 from io import BytesIO  
 import os
 import logging
@@ -47,13 +47,22 @@ def save_file(file_obj: BytesIO, file_path: str) -> bool:
 def create_book(db: Session, path: str, metadata: dict) -> Book:
     logger.info(f'Creating a new book with path: {path} and metadata: {metadata}')
     new_book = Book(path=path, metadata_=metadata, page_idx=0)
+    
+    # Create the associated TtsModel with standard values
+    new_tts_model = TtsModel(
+        model_name="standard",
+        model_keys={},
+        path=path
+    )
+
     try:
         db.add(new_book)
+        db.add(new_tts_model)
         db.commit()
         db.refresh(new_book)
         logger.info(f'Book created with path: {new_book.path}')
         return new_book
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.rollback()
         logger.error(f'Failed to create book with path: {path}. Error: {e}')
         return None

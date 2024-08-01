@@ -14,7 +14,7 @@ from .register import register_user, UserCreate
 from db.crud import get_all_users
 from db.database import get_db
 from db.books import create_book, save_file, get_all_books, get_book_image_path, delete_book
-from db.tts_model import create_tts_model
+from db.tts_model import update_keys, get_model_keys_by_path
 from io import BytesIO
 import logging
 from botocore.exceptions import BotoCoreError, ClientError
@@ -204,18 +204,20 @@ def synthesize_speech(aws_access_key_id: str, aws_secret_access_key: str, region
     except (BotoCoreError, ClientError) as error:
         raise HTTPException(status_code=500, detail=str(error))
 
-@app.post("/add_tts_model", response_model=TextResponseModel)
-def add_tts_model(db: Session = Depends(get_db), model_name: str="standard", model_keys: dict={}):
+@app.post("/update_tts_model", response_model=TextResponseModel)
+def update_tts_model(db: Session = Depends(get_db), path: str = "", model_name: str = "standard", model_keys: dict = {}):
     try:
-        create_tts_model(db, model_name, model_keys)
+        update_keys(db, path, model_keys, model_name)  
         return {"text": "TTS model added successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {e}")
 
-# @app.get("/tts_model", response_model=TextResponseModel)
-# def get_tts_model(db: Session = Depends(get_db)):
-#     tts_models = get_all_tts_models(db)
-#     return TextResponseModel(text=tts_models)
+
+@app.get("/tts_model", response_model=dict)
+def get_tts_model(db: Session = Depends(get_db), book_path: str = None):
+    keys = get_model_keys_by_path(db, book_path)
+    return keys
+
 
 if __name__ == "__main__":
     import uvicorn

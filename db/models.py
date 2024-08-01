@@ -17,9 +17,10 @@ class TtsModel(Base):
     __tablename__ = 'tts_model'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    model_name = Column(String(255), nullable=False, unique=True)
+    model_name = Column(String(255), nullable=False)
     model_keys = Column(JSON)
-    
+    path = Column(String(512), ForeignKey('book.path'))
+
     books = relationship("Book", back_populates="tts_model")
 
 class Book(Base):
@@ -28,6 +29,5 @@ class Book(Base):
     path = Column(String(512), primary_key=True)
     metadata_ = Column("metadata", JSON)
     page_idx = Column(Integer, default=0)
-    tts_model_id = Column(Integer, ForeignKey('tts_model.id'))
 
     tts_model = relationship("TtsModel", back_populates="books")
