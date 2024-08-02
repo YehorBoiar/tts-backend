@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from typing import List
 from .auth import authenticate_user, create_access_token, get_current_active_user, get_user_with_role
-from .models import  Token, User, TextResponseModel, TextToSpeechRequest, ChunkTextResponse, ChunkTextRequest
+from .models import  Token, User, TextResponseModel, TextToSpeechRequest, ChunkTextResponse, ChunkTextRequest, TtsModelUpdateRequest
 from .const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION, MEDIA_ASSETS, DOC_PATH, IMG_PATH, AWS_SECRET_ACCESS_KEY, AWS_ACCESS_KEY_ID, AWS_REGION
 from tts_utils.pdf_extraction import pdf_to_text, extract_metadata, get_pages, first_page_jpeg, make_path, chunk_text, delete_file
 from datetime import timedelta
@@ -205,15 +205,15 @@ def synthesize_speech(aws_access_key_id: str, aws_secret_access_key: str, region
         raise HTTPException(status_code=500, detail=str(error))
 
 @app.post("/update_tts_model", response_model=TextResponseModel)
-def update_tts_model(db: Session = Depends(get_db), path: str = "", model_name: str = "standard", model_keys: dict = {}):
-    logger.info(f"Received request to update TTS model: path={path}, model_name={model_name}, model_keys={model_keys}")
+def update_tts_model(request: TtsModelUpdateRequest, db: Session = Depends(get_db)):
+    logger.info(f"Received request to update TTS model: path={request.path}, model_name={request.model_name}, model_keys={request.model_keys}")
     try:
-        result = update_keys(db, path, model_keys, model_name)
+        result = update_keys(db, request.path, request.model_keys, request.model_name)
         if result:
             logger.info("TTS model added successfully.")
             return {"text": "TTS model added successfully"}
         else:
-            logger.warning(f"No TTS model found for path: {path}, nothing updated.")
+            logger.warning(f"No TTS model found for path: {request.path}, nothing updated.")
             raise HTTPException(status_code=404, detail="TTS model not found")
     except Exception as e:
         logger.error(f"Error updating TTS model: {e}")

@@ -31,3 +31,8 @@ class ChunkTextRequest(BaseModel):
 
 class ChunkTextResponse(BaseModel):
     chunks: List[str]
+
+class TtsModelUpdateRequest(BaseModel):
+    path: str
+    model_name: str
+    model_keys: dict
