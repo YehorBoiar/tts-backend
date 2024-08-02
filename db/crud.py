@@ -1,6 +1,5 @@
-import os
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, Column, String
+from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from backend.const import USERS_DB
