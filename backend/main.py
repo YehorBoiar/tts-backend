@@ -8,7 +8,6 @@ from .models import  Token, User, TextResponseModel, TextToSpeechRequest, ChunkT
 from .const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION, MEDIA_ASSETS, DOC_PATH, IMG_PATH, AWS_SECRET_ACCESS_KEY, AWS_ACCESS_KEY_ID, AWS_REGION
 from tts_utils.pdf_extraction import pdf_to_text, extract_metadata, get_pages, first_page_jpeg, make_path, chunk_text, delete_file
 from datetime import timedelta
-from sqlalchemy import JSON
 from sqlalchemy.orm import Session
 from .register import register_user, UserCreate
 from db.crud import get_all_users
@@ -17,8 +16,6 @@ from db.books import create_book, save_file, get_all_books, get_book_image_path,
 from db.tts_model import update_keys, get_model_by_path
 from io import BytesIO
 import logging
-from botocore.exceptions import BotoCoreError, ClientError
-import boto3
 
 app = FastAPI()
 # Update the origins list to include your Angular application's origin
@@ -35,13 +32,6 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-)
-
-polly_client = boto3.client(
-    'polly',
-    aws_access_key_id=AWS_ACCESS_KEY_ID,
-    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-    region_name=AWS_REGION
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -179,30 +169,6 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
 def chunk_text_endpoint(request: ChunkTextRequest):
     chunks = chunk_text(request.text, request.chunk_size)
     return ChunkTextResponse(chunks=chunks)
-
-@app.post("/synthesize_api")
-def synthesize_speech(aws_access_key_id: str, aws_secret_access_key: str, region_name: str, request: TextToSpeechRequest):
-    try:
-        polly_client = boto3.client(
-            'polly',
-            aws_access_key_id=aws_access_key_id,
-            aws_secret_access_key=aws_secret_access_key,
-            region_name=region_name
-        )
-        response = polly_client.synthesize_speech(
-            Text=request.text,
-            OutputFormat='mp3',
-            VoiceId=request.voice_id
-        )
-
-        if "AudioStream" in response:
-            audio_stream = response["AudioStream"].read()
-            return {"audio": audio_stream.hex()}
-        else:
-            raise HTTPException(status_code=500, detail="Error in synthesizing speech")
-
-    except (BotoCoreError, ClientError) as error:
-        raise HTTPException(status_code=500, detail=str(error))
 
 @app.post("/update_tts_model", response_model=TextResponseModel)
 def update_tts_model(request: TtsModelUpdateRequest, db: Session = Depends(get_db)):
