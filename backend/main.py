@@ -206,10 +206,17 @@ def synthesize_speech(aws_access_key_id: str, aws_secret_access_key: str, region
 
 @app.post("/update_tts_model", response_model=TextResponseModel)
 def update_tts_model(db: Session = Depends(get_db), path: str = "", model_name: str = "standard", model_keys: dict = {}):
+    logger.info(f"Received request to update TTS model: path={path}, model_name={model_name}, model_keys={model_keys}")
     try:
-        update_keys(db, path, model_keys, model_name)  
-        return {"text": "TTS model added successfully"}
+        result = update_keys(db, path, model_keys, model_name)
+        if result:
+            logger.info("TTS model added successfully.")
+            return {"text": "TTS model added successfully"}
+        else:
+            logger.warning(f"No TTS model found for path: {path}, nothing updated.")
+            raise HTTPException(status_code=404, detail="TTS model not found")
     except Exception as e:
+        logger.error(f"Error updating TTS model: {e}")
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {e}")
 
 
