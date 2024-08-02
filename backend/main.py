@@ -4,8 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from typing import List
 from .auth import authenticate_user, create_access_token, get_current_active_user, get_user_with_role
-from .models import  Token, User, TextResponseModel, TextToSpeechRequest, ChunkTextResponse, ChunkTextRequest, TtsModelUpdateRequest
-from .const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION, MEDIA_ASSETS, DOC_PATH, IMG_PATH, AWS_SECRET_ACCESS_KEY, AWS_ACCESS_KEY_ID, AWS_REGION
+from .models import  Token, User, TextResponseModel, ChunkTextResponse, ChunkTextRequest, TtsModelUpdateRequest
+from .const import ACCESS_TOKEN_EXPIRE_MINUTES, CREDENTIALS_EXCEPTION, MEDIA_ASSETS, DOC_PATH, IMG_PATH
 from tts_utils.pdf_extraction import pdf_to_text, extract_metadata, get_pages, first_page_jpeg, make_path, chunk_text, delete_file
 from datetime import timedelta
 from sqlalchemy.orm import Session
