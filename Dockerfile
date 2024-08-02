@@ -8,7 +8,6 @@ WORKDIR /backend
 COPY requirements.txt .
 
 # Install the dependencies
-RUN pip install Cython psycopg2
 RUN pip install -r requirements.txt
 
 # Copy the rest of the application code to the working directory
