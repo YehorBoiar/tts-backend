@@ -14,7 +14,7 @@ from .register import register_user, UserCreate
 from db.crud import get_all_users
 from db.database import get_db
 from db.books import create_book, save_file, get_all_books, get_book_image_path, delete_book
-from db.tts_model import update_keys, get_model_keys_by_path
+from db.tts_model import update_keys, get_model_by_path
 from io import BytesIO
 import logging
 from botocore.exceptions import BotoCoreError, ClientError
@@ -222,7 +222,7 @@ def update_tts_model(request: TtsModelUpdateRequest, db: Session = Depends(get_d
 
 @app.get("/tts_model", response_model=dict)
 def get_tts_model(db: Session = Depends(get_db), book_path: str = None):
-    keys = get_model_keys_by_path(db, book_path)
+    keys = get_model_by_path(db, book_path)
     return keys
 
 

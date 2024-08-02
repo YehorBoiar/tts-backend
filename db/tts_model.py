@@ -6,10 +6,10 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def get_model_keys_by_path(db: Session, path) -> dict:
+def get_model_by_path(db: Session, path) -> dict:
     tts_model = db.query(TtsModel).filter(TtsModel.path == path).first()
     if tts_model:
-        return tts_model.model_keys
+        return {"name": tts_model.model_name, "keys": tts_model.model_keys}
     return None
 
 def update_keys(db: Session, path: str, keys: dict, model_name: str="standard"):
