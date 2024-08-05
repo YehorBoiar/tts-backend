@@ -8,7 +8,7 @@ from db.crud import create_book, save_file, get_all_books
 from schemas.user import User
 from schemas.book import TextResponseModel
 from core.security import get_current_active_user, authenticate_user, create_access_token
-from utils.pdf_utils import extract_metadata, first_page_jpeg, make_path
+from utils.pdf_utils import extract_metadata, first_page_jpeg, make_path, pdf_to_text
 from schemas.user import Token
 from datetime import timedelta
 from typing import List
@@ -21,6 +21,11 @@ router = APIRouter()
 def get_books(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)):
     books = get_all_books(db, user.username)
     return [{"metadata": book.metadata_, "path": book.path, "page": book.page_idx} for book in books]
+
+@router.get("/get_book", response_model=TextResponseModel)
+def get_book(path):
+    text = pdf_to_text(path)
+    return TextResponseModel(text=text)
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
