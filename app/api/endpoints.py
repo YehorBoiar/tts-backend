@@ -4,19 +4,56 @@ from sqlalchemy.orm import Session
 from io import BytesIO
 from const import MEDIA_ASSETS, DOC_PATH, IMG_PATH, CREDENTIALS_EXCEPTION, ACCESS_TOKEN_EXPIRE_MINUTES
 from db.database import get_db
-from db.crud import create_book, save_file, get_all_books
+from db.crud import create_book, save_file, get_all_books, get_book_image_path, delete_book
 from schemas.user import User
 from schemas.book import TextResponseModel
 from core.security import get_current_active_user, authenticate_user, create_access_token
-from utils.pdf_utils import extract_metadata, first_page_jpeg, make_path, pdf_to_text
+from utils.pdf_utils import extract_metadata, first_page_jpeg, make_path, pdf_to_text, delete_file
 from schemas.user import Token
 from datetime import timedelta
 from typing import List
+import logging 
 
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+@router.delete("/delete_book", response_model=TextResponseModel)
+def delete(db: Session = Depends(get_db), path: str = None):
+    logger.info(f"Received request to delete book with path: {path}")
+
+    try:
+        img_path = get_book_image_path(db, path)
+        logger.info(f"Image path for book: {img_path}")
+
+        if not delete_file(img_path):
+            logger.error(f"Failed to delete image file: {img_path}")
+            raise HTTPException(status_code=500, detail="Failed to delete image file")
+        
+        logger.info(f"Successfully deleted image file: {img_path}")
+
+        if not delete_book(db, path):
+            logger.error(f"Book not found in database: {path}")
+            raise HTTPException(status_code=404, detail="Book not found")
+        
+        logger.info(f"Successfully deleted book record from database: {path}")
+
+        if not delete_file(path):
+            logger.error(f"Failed to delete book file: {path}")
+            raise HTTPException(status_code=500, detail="Failed to delete file")
+        
+        logger.info(f"Successfully deleted book file: {path}")
+
+        return TextResponseModel(text="Book deleted successfully")
+    except HTTPException as e:
+        logger.error(f"HTTP Exception: {e.detail}")
+        raise e
+    except Exception as e:
+        logger.error(f"An unexpected error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred")
+    
 @router.get("/books", response_model=List[dict])
 def get_books(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)):
     books = get_all_books(db, user.username)

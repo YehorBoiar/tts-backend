@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
@@ -112,3 +113,19 @@ def save_file(file_obj: BytesIO, file_path: str) -> bool:
 def get_all_books(db: Session, username: str) -> list[Book]:
     books = db.query(Book).filter(Book.path.like(f"%{username}%")).all()
     return books if books else []
+
+def get_book_image_path(db: Session, book_path: str) -> str:
+    book = db.query(Book).filter(Book.path == book_path).first()
+    if book:
+        return book.metadata_['img_path']
+    else:
+        raise HTTPException(status_code=404, detail="Book not found")
+    
+def delete_book(db: Session, path: str) -> bool:
+    book = db.query(Book).filter(Book.path == path).first()
+    if book:
+        db.delete(book)
+        db.commit()
+        return True
+    else:
+        return False
