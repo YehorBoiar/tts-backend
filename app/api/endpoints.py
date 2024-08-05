@@ -20,6 +20,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+@router.get("/flip", response_model=TextResponseModel)
+def flip_page(path, page_num):
+    text = pdf_to_text(path, page_num)
+    return TextResponseModel(text=text)
 
 @router.get("/get_image", response_class=FileResponse)
 def get_image(db: Session = Depends(get_db), book_path: str = None):   
