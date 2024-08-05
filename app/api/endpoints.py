@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from io import BytesIO
 from const import MEDIA_ASSETS, DOC_PATH, IMG_PATH, CREDENTIALS_EXCEPTION, ACCESS_TOKEN_EXPIRE_MINUTES
 from db.database import get_db
-from db.crud import create_book, save_file, get_all_books, get_book_image_path, delete_book, update_keys
+from db.crud import create_book, save_file, get_all_books, get_book_image_path, delete_book, update_keys, get_model_by_path
 from schemas.user import User
 from schemas.book import TextResponseModel, ChunkTextResponse, ChunkTextRequest
 from core.security import get_current_active_user, authenticate_user, create_access_token, register_user
@@ -19,6 +19,11 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+@router.get("/tts_model", response_model=dict)
+def get_tts_model(db: Session = Depends(get_db), book_path: str = None):
+    keys = get_model_by_path(db, book_path)
+    return keys
 
 @router.post("/update_tts_model", response_model=TextResponseModel)
 def update_tts_model(request: TtsModelUpdateRequest, db: Session = Depends(get_db)):

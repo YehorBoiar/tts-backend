@@ -142,3 +142,9 @@ def update_keys(db: Session, path: str, keys: dict, model_name: str="standard"):
         return tts_model
     logger.warning(f"No TTS model found for path: {path}")
     return None
+
+def get_model_by_path(db: Session, path) -> dict:
+    tts_model = db.query(TtsModel).filter(TtsModel.path == path).first()
+    if tts_model:
+        return {"name": tts_model.model_name, "keys": tts_model.model_keys}
+    return None
