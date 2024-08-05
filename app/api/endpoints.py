@@ -8,9 +8,9 @@ from db.database import get_db
 from db.crud import create_book, save_file, get_all_books, get_book_image_path, delete_book
 from schemas.user import User
 from schemas.book import TextResponseModel
-from core.security import get_current_active_user, authenticate_user, create_access_token
+from core.security import get_current_active_user, authenticate_user, create_access_token, register_user
 from utils.pdf_utils import extract_metadata, first_page_jpeg, make_path, pdf_to_text, delete_file, get_pages
-from schemas.user import Token
+from schemas.user import Token, UserCreate
 from datetime import timedelta
 from typing import List
 import logging 
@@ -19,6 +19,11 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+@router.post("/register", response_model=UserCreate)
+def register(user_create: UserCreate, db: Session = Depends(get_db)):
+    new_user = register_user(db, user_create)
+    return new_user
 
 @router.post("/text", response_model=TextResponseModel)
 def get_text(pdf_file: UploadFile = File(...)):
