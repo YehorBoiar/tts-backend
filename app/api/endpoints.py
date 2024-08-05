@@ -7,9 +7,9 @@ from const import MEDIA_ASSETS, DOC_PATH, IMG_PATH, CREDENTIALS_EXCEPTION, ACCES
 from db.database import get_db
 from db.crud import create_book, save_file, get_all_books, get_book_image_path, delete_book
 from schemas.user import User
-from schemas.book import TextResponseModel
+from schemas.book import TextResponseModel, ChunkTextResponse, ChunkTextRequest
 from core.security import get_current_active_user, authenticate_user, create_access_token, register_user
-from utils.pdf_utils import extract_metadata, first_page_jpeg, make_path, pdf_to_text, delete_file, get_pages
+from utils.pdf_utils import extract_metadata, first_page_jpeg, make_path, pdf_to_text, delete_file, get_pages, chunk_text
 from schemas.user import Token, UserCreate
 from datetime import timedelta
 from typing import List
@@ -19,6 +19,11 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+@router.post("/chunk_text", response_model=ChunkTextResponse)
+def chunk_text_endpoint(request: ChunkTextRequest):
+    chunks = chunk_text(request.text, request.chunk_size)
+    return ChunkTextResponse(chunks=chunks)
 
 @router.post("/register", response_model=UserCreate)
 def register(user_create: UserCreate, db: Session = Depends(get_db)):
