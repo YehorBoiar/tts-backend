@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from io import BytesIO
 from const import MEDIA_ASSETS, DOC_PATH, IMG_PATH, CREDENTIALS_EXCEPTION, ACCESS_TOKEN_EXPIRE_MINUTES
@@ -8,7 +9,7 @@ from db.crud import create_book, save_file, get_all_books, get_book_image_path, 
 from schemas.user import User
 from schemas.book import TextResponseModel
 from core.security import get_current_active_user, authenticate_user, create_access_token
-from utils.pdf_utils import extract_metadata, first_page_jpeg, make_path, pdf_to_text, delete_file
+from utils.pdf_utils import extract_metadata, first_page_jpeg, make_path, pdf_to_text, delete_file, get_pages
 from schemas.user import Token
 from datetime import timedelta
 from typing import List
@@ -19,6 +20,17 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+
+@router.get("/get_image", response_class=FileResponse)
+def get_image(db: Session = Depends(get_db), book_path: str = None):   
+    image_path = get_book_image_path(db, book_path)
+    return FileResponse(image_path, media_type='image/jpeg')
+    
+
+@router.get("/get_pages_num", response_model=TextResponseModel)
+def get_pages_num(path):
+    pages = get_pages(path)
+    return TextResponseModel(text=str(len(pages)))
 
 @router.delete("/delete_book", response_model=TextResponseModel)
 def delete(db: Session = Depends(get_db), path: str = None):
