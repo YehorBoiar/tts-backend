@@ -20,6 +20,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+@router.post("/text", response_model=TextResponseModel)
+def get_text(pdf_file: UploadFile = File(...)):
+    if pdf_file.filename == '':
+        raise HTTPException(status_code=400, detail="No selected file")
+    text = pdf_to_text(pdf_file.file.read())
+    return {"text": text}
+
 @router.get("/flip", response_model=TextResponseModel)
 def flip_page(path, page_num):
     text = pdf_to_text(path, page_num)
