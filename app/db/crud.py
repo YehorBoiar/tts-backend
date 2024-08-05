@@ -129,3 +129,16 @@ def delete_book(db: Session, path: str) -> bool:
         return True
     else:
         return False
+
+def update_keys(db: Session, path: str, keys: dict, model_name: str="standard"):
+    logger.info(f"Attempting to update keys for path: {path} with model_name: {model_name} and keys: {keys}")
+    tts_model = db.query(TtsModel).filter(TtsModel.path == path).first()
+    if tts_model:
+        logger.info(f"Found TTS model for path: {path}. Updating model_name and keys.")
+        tts_model.model_name = model_name
+        tts_model.model_keys = keys
+        db.commit()
+        logger.info(f"Model updated successfully for path: {path}")
+        return tts_model
+    logger.warning(f"No TTS model found for path: {path}")
+    return None

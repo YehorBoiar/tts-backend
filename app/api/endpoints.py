@@ -5,12 +5,12 @@ from sqlalchemy.orm import Session
 from io import BytesIO
 from const import MEDIA_ASSETS, DOC_PATH, IMG_PATH, CREDENTIALS_EXCEPTION, ACCESS_TOKEN_EXPIRE_MINUTES
 from db.database import get_db
-from db.crud import create_book, save_file, get_all_books, get_book_image_path, delete_book
+from db.crud import create_book, save_file, get_all_books, get_book_image_path, delete_book, update_keys
 from schemas.user import User
 from schemas.book import TextResponseModel, ChunkTextResponse, ChunkTextRequest
 from core.security import get_current_active_user, authenticate_user, create_access_token, register_user
 from utils.pdf_utils import extract_metadata, first_page_jpeg, make_path, pdf_to_text, delete_file, get_pages, chunk_text
-from schemas.user import Token, UserCreate
+from schemas.user import Token, UserCreate, TtsModelUpdateRequest
 from datetime import timedelta
 from typing import List
 import logging 
@@ -20,6 +20,21 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+@router.post("/update_tts_model", response_model=TextResponseModel)
+def update_tts_model(request: TtsModelUpdateRequest, db: Session = Depends(get_db)):
+    logger.info(f"Received request to update TTS model: path={request.path}, model_name={request.model_name}, model_keys={request.model_keys}")
+    try:
+        result = update_keys(db, request.path, request.model_keys, request.model_name)
+        if result:
+            logger.info("TTS model added successfully.")
+            return {"text": "TTS model added successfully"}
+        else:
+            logger.warning(f"No TTS model found for path: {request.path}, nothing updated.")
+            raise HTTPException(status_code=404, detail="TTS model not found")
+    except Exception as e:
+        logger.error(f"Error updating TTS model: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {e}")
+    
 @router.post("/chunk_text", response_model=ChunkTextResponse)
 def chunk_text_endpoint(request: ChunkTextRequest):
     chunks = chunk_text(request.text, request.chunk_size)

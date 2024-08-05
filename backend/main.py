@@ -10,10 +10,10 @@ from tts_utils.pdf_extraction import pdf_to_text, extract_metadata, get_pages, f
 from datetime import timedelta
 from sqlalchemy.orm import Session
 from .register import register_user, UserCreate
-from db1.crud import get_all_users
-from db1.database import get_db
-from db1.books import create_book, save_file, get_all_books, get_book_image_path, delete_book
-from db1.tts_model import update_keys, get_model_by_path
+# from db.crud import get_all_users
+# from db.database import get_db
+# from db.books import create_book, save_file, get_all_books, get_book_image_path, delete_book
+# from db.tts_model import update_keys, get_model_by_path
 from io import BytesIO
 import logging
 
