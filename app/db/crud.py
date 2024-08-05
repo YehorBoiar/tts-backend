@@ -108,3 +108,7 @@ def save_file(file_obj: BytesIO, file_path: str) -> bool:
     except Exception as e:
         print(f"An error occurred while saving the file: {e}")
         return False
+    
+def get_all_books(db: Session, username: str) -> list[Book]:
+    books = db.query(Book).filter(Book.path.like(f"%{username}%")).all()
+    return books if books else []
