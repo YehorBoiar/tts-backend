@@ -1,9 +1,10 @@
-import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from backend.const import USERS_DB
+from const import USERS_DB
+
+
 load_dotenv()
 
 engine = create_engine(USERS_DB)
